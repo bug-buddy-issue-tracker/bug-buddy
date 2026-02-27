@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { usePathname } from "next/navigation";
 import * as React from "react";
+import { useOrg } from "./org-context";
 import { useProject } from "./project-context";
 
 const sectionLabels: Record<string, string> = {
@@ -23,77 +24,79 @@ const sectionLabels: Record<string, string> = {
 
 export function DashboardBreadcrumb() {
   const pathname = usePathname();
-  const { currentProject } = useProject();
+  const { currentProject, orgSlug } = useProject();
+  const { activeOrg } = useOrg();
 
-  // Build breadcrumb items based on the current path
   const buildBreadcrumbs = () => {
     const items: Array<{ label: string; href?: string }> = [];
-
     const segments = pathname.split("/").filter(Boolean);
-    if (segments[0] !== "dashboard") {
-      return items;
-    }
 
-    const second = segments[1];
-    const isGlobalSection =
-      second === undefined ||
-      second === "projects" ||
-      second === "account" ||
-      second === "admin";
+    if (segments[0] !== "dashboard") return items;
 
-    // Always start with the global dashboard entrypoint.
-    // (This route redirects to the last-selected project.)
     items.push({ label: "Dashboard", href: "/dashboard" });
 
-    // If we're on the root dashboard, we're done
-    if (pathname === "/dashboard") {
+    if (pathname === "/dashboard") return items;
+
+    const second = segments[1];
+    const globalSections = ["account", "admin", "new"];
+
+    if (second && globalSections.includes(second)) {
+      for (let i = 1; i < segments.length; i++) {
+        const segment = segments[i]!;
+        const isLast = i === segments.length - 1;
+        const label = sectionLabels[segment] || segment;
+        const href = !isLast
+          ? `/${segments.slice(0, i + 1).join("/")}`
+          : undefined;
+        items.push({ label, href });
+      }
       return items;
     }
 
-    // Project-scoped routes look like /dashboard/<projectSlug>/...
-    if (!isGlobalSection && second) {
-      items.push({
-        label: currentProject?.name || second,
-        href: `/dashboard/${second}`,
-      });
+    // Org-scoped: /dashboard/<orgSlug>/...
+    if (second) {
+      const third = segments[2]; // projectSlug or "settings"
 
-      // Remaining segments after project slug
-      for (let i = 2; i < segments.length; i++) {
-        const segment = segments[i]!;
-
-        const isLast = i === segments.length - 1;
-        const label =
-          sectionLabels[segment] ||
-          (/^[a-zA-Z0-9_-]+$/.test(segment) && segment.length > 20
-            ? `${segment.substring(0, 20)}...`
-            : segment
-                .split("-")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" "));
-
-        const href = (() => {
-          // Link sections, not IDs.
-          if (segment === "feedback") return `/dashboard/${second}/feedback`;
-          if (segment === "analytics") return `/dashboard/${second}/analytics`;
-          if (segment === "settings") return `/dashboard/${second}/settings`;
-          return undefined;
-        })();
-
-        items.push({ label, href: !isLast ? href : undefined });
+      if (third === "settings") {
+        items.push({
+          label: activeOrg.name,
+          href: `/dashboard/${second}`,
+        });
+        items.push({ label: "Settings" });
+        return items;
       }
 
-      return items;
-    }
+      if (third) {
+        items.push({
+          label: currentProject?.name || third,
+          href: `/dashboard/${second}/${third}`,
+        });
 
-    // Global dashboard routes: /dashboard/new, /dashboard/account, /dashboard/admin, ...
-    for (let i = 1; i < segments.length; i++) {
-      const segment = segments[i]!;
-      const isLast = i === segments.length - 1;
-      const label = sectionLabels[segment] || segment;
-      const href = !isLast
-        ? `/${segments.slice(0, i + 1).join("/")}`
-        : undefined;
-      items.push({ label, href });
+        for (let i = 3; i < segments.length; i++) {
+          const segment = segments[i]!;
+          const isLast = i === segments.length - 1;
+          const label =
+            sectionLabels[segment] ||
+            (/^[a-zA-Z0-9_-]+$/.test(segment) && segment.length > 20
+              ? `${segment.substring(0, 20)}...`
+              : segment
+                  .split("-")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" "));
+
+          const href = (() => {
+            if (segment === "feedback")
+              return `/dashboard/${second}/${third}/feedback`;
+            if (segment === "analytics")
+              return `/dashboard/${second}/${third}/analytics`;
+            if (segment === "settings")
+              return `/dashboard/${second}/${third}/settings`;
+            return undefined;
+          })();
+
+          items.push({ label, href: !isLast ? href : undefined });
+        }
+      }
     }
 
     return items;

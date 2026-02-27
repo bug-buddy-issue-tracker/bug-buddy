@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getUserProjects(userId: string) {
+export async function getOrgProjects(organizationId: string) {
   return prisma.project.findMany({
-    where: { userId },
+    where: { organizationId },
     select: {
       id: true,
       name: true,
@@ -29,9 +29,9 @@ export async function getUserProjects(userId: string) {
   });
 }
 
-export async function getUserProjectsWithIntegrations(userId: string) {
+export async function getOrgProjectsWithIntegrations(organizationId: string) {
   return prisma.project.findMany({
-    where: { userId },
+    where: { organizationId },
     include: {
       githubIntegration: true,
       widgetCustomization: true,
@@ -39,24 +39,27 @@ export async function getUserProjectsWithIntegrations(userId: string) {
   });
 }
 
-export async function getUserProjectsBasic(userId: string) {
+export async function getOrgProjectsBasic(organizationId: string) {
   return prisma.project.findMany({
-    where: { userId },
+    where: { organizationId },
     select: { id: true, name: true },
   });
 }
 
-export async function getUserProjectsForSwitcher(userId: string) {
+export async function getOrgProjectsForSwitcher(organizationId: string) {
   return prisma.project.findMany({
-    where: { userId },
+    where: { organizationId },
     select: { id: true, name: true, slug: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
-export async function getUserProjectBySlug(userId: string, slug: string) {
+export async function getOrgProjectBySlug(
+  organizationId: string,
+  slug: string,
+) {
   return prisma.project.findFirst({
-    where: { userId, slug },
+    where: { organizationId, slug },
     include: {
       githubIntegration: true,
       widgetCustomization: true,
@@ -65,9 +68,9 @@ export async function getUserProjectBySlug(userId: string, slug: string) {
   });
 }
 
-export async function getUserProjectCount(userId: string) {
+export async function getOrgProjectCount(organizationId: string) {
   return prisma.project.count({
-    where: { userId },
+    where: { organizationId },
   });
 }
 

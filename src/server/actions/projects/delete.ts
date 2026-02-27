@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAuth } from "@/lib/auth/helpers";
+import { getProjectWithOrgCheck, hasMinRole } from "@/lib/auth/org-access";
 import { prisma } from "@/lib/prisma";
 import { deleteProjectSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
@@ -8,25 +8,16 @@ import { z } from "zod";
 
 export async function deleteProject(data: z.infer<typeof deleteProjectSchema>) {
   try {
-    const session = await requireAuth();
     const validated = deleteProjectSchema.parse(data);
+    const { member } = await getProjectWithOrgCheck(validated.projectId);
 
-    // Verify project belongs to user
-    const project = await prisma.project.findFirst({
-      where: {
-        id: validated.projectId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!project) {
+    if (!hasMinRole(member.role, "owner")) {
       return {
         success: false,
-        error: "Project not found",
+        error: "Only the organization owner can delete projects",
       };
     }
 
-    // Delete project (cascade will handle related data)
     await prisma.project.delete({
       where: { id: validated.projectId },
     });
@@ -34,9 +25,7 @@ export async function deleteProject(data: z.infer<typeof deleteProjectSchema>) {
     revalidatePath("/dashboard", "layout");
     revalidatePath("/dashboard/new", "page");
 
-    return {
-      success: true,
-    };
+    return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {

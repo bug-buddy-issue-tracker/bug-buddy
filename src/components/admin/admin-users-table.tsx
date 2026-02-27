@@ -97,7 +97,7 @@ export function AdminUsersTable() {
         throw new Error(response.error.message);
       }
 
-      return response.data as UsersResponse;
+      return response.data as unknown as UsersResponse;
     },
   });
 

@@ -20,6 +20,7 @@ import { Bell, Check, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useOrg } from "./dashboard/org-context";
 // Helper function to format relative time
 function formatRelativeTime(date: Date): string {
   const now = new Date();
@@ -66,6 +67,7 @@ export function NotificationsBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { activeOrg } = useOrg();
 
   const { data, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -105,7 +107,7 @@ export function NotificationsBell() {
     if (notification.issue?.feedback?.id) {
       const slug = notification.issue.feedback.project.slug;
       router.push(
-        `/dashboard/${slug}/feedback/${notification.issue.feedback.id}`,
+        `/dashboard/${activeOrg.slug}/${slug}/feedback/${notification.issue.feedback.id}`,
       );
       setIsOpen(false);
     }

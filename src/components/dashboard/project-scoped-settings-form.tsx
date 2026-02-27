@@ -46,11 +46,15 @@ interface ProjectScopedSettingsFormProps {
       buttonPosition: string;
     } | null;
   };
+  memberRole?: string;
 }
 
 export function ProjectScopedSettingsForm({
   project,
+  memberRole = "owner",
 }: ProjectScopedSettingsFormProps) {
+  const isOwner = memberRole === "owner";
+  const isAdmin = memberRole === "owner" || memberRole === "admin";
   const [urlTab, setUrlTab] = useQueryState("tab", {
     defaultValue: "project",
   });
@@ -197,8 +201,12 @@ export function ProjectScopedSettingsForm({
         <div className="overflow-x-auto -mx-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <TabsList className="inline-flex min-w-fit ">
             <TabsTrigger value="project">Project Settings</TabsTrigger>
-            <TabsTrigger value="github">GitHub Integration</TabsTrigger>
-            <TabsTrigger value="widget">Widget Customization</TabsTrigger>
+            {isOwner && (
+              <TabsTrigger value="github">GitHub Integration</TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="widget">Widget Customization</TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -209,25 +217,31 @@ export function ProjectScopedSettingsForm({
             apiKey={project.apiKey}
             secretKey={project.secretKey}
             allowedDomains={project.allowedDomains}
+            isOwner={isOwner}
+            isAdmin={isAdmin}
           />
         </TabsContent>
 
-        <TabsContent value="github">
-          <GitHubAppIntegrationForm
-            projectId={project.id}
-            initialData={project.githubIntegration || null}
-            onDirtyChange={setGithubFormDirty}
-          />
-        </TabsContent>
+        {isOwner && (
+          <TabsContent value="github">
+            <GitHubAppIntegrationForm
+              projectId={project.id}
+              initialData={project.githubIntegration || null}
+              onDirtyChange={setGithubFormDirty}
+            />
+          </TabsContent>
+        )}
 
-        <TabsContent value="widget">
-          <WidgetCustomizationForm
-            projectId={project.id}
-            apiKey={project.apiKey}
-            initialData={project.widgetCustomization || null}
-            onDirtyChange={setWidgetFormDirty}
-          />
-        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="widget">
+            <WidgetCustomizationForm
+              projectId={project.id}
+              apiKey={project.apiKey}
+              initialData={project.widgetCustomization || null}
+              onDirtyChange={setWidgetFormDirty}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>

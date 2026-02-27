@@ -1,7 +1,7 @@
 "use server";
 
 import { serverEnv } from "@/env";
-import { requireAuth } from "@/lib/auth/helpers";
+import { requireOrgRole } from "@/lib/auth/org-access";
 import { getInstallationAccessToken } from "@/lib/github-app-auth";
 import { prisma } from "@/lib/prisma";
 import { createProjectSchema } from "@/lib/schemas";
@@ -13,10 +13,9 @@ import { z } from "zod";
 
 export async function createProject(data: z.input<typeof createProjectSchema>) {
   try {
-    const session = await requireAuth();
     const validated = createProjectSchema.parse(data);
+    const { session } = await requireOrgRole(validated.organizationId, "admin");
 
-    // Validate repository format and access
     const [repositoryOwner, repositoryName] = validated.repository.split("/");
     if (!repositoryOwner || !repositoryName) {
       return {
@@ -25,7 +24,6 @@ export async function createProject(data: z.input<typeof createProjectSchema>) {
       };
     }
 
-    // Verify GitHub App installation has access to the repository
     try {
       const installationToken = await getInstallationAccessToken(
         validated.installationId,
@@ -36,7 +34,6 @@ export async function createProject(data: z.input<typeof createProjectSchema>) {
         repo: repositoryName,
       });
 
-      // Check if repository has issues enabled
       if (!repo.has_issues) {
         return {
           success: false,
@@ -61,7 +58,6 @@ export async function createProject(data: z.input<typeof createProjectSchema>) {
       throw error;
     }
 
-    // Generate API key and secret key
     const apiKey = `bb_${randomBytes(32).toString("hex")}`;
     const secretKey = `bb_sk_${randomBytes(32).toString("hex")}`;
     const slug = await generateUniqueProjectSlug(validated.name);
@@ -75,6 +71,7 @@ export async function createProject(data: z.input<typeof createProjectSchema>) {
         apiKey,
         secretKey,
         userId: session.user.id,
+        organizationId: validated.organizationId,
       },
       include: {
         _count: {
@@ -85,7 +82,6 @@ export async function createProject(data: z.input<typeof createProjectSchema>) {
       },
     });
 
-    // Create GitHub integration (repository is required)
     await prisma.gitHubIntegration.create({
       data: {
         projectId: project.id,
@@ -98,7 +94,6 @@ export async function createProject(data: z.input<typeof createProjectSchema>) {
       },
     });
 
-    // Project-scoped dashboard will be server-rendered; invalidate the entrypoint.
     revalidatePath("/dashboard", "layout");
     revalidatePath("/dashboard/new", "page");
 

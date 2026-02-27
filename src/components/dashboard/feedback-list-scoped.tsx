@@ -14,6 +14,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 import * as React from "react";
+import { useOrg } from "./org-context";
 
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/components/ui/data-pagination";
@@ -78,6 +79,7 @@ export function FeedbackListScoped({
   initialFeedback,
 }: FeedbackListScopedProps) {
   const router = useRouter();
+  const { activeOrg } = useOrg();
   const [limit, setLimit] = React.useState(10);
   const [offset, setOffset] = React.useState(0);
   const isInitialMount = React.useRef(true);
@@ -293,7 +295,7 @@ export function FeedbackListScoped({
                 <DropdownMenuItem
                   onClick={() =>
                     router.push(
-                      `/dashboard/${projectSlug}/feedback/${feedback.id}`,
+                      `/dashboard/${activeOrg.slug}/${projectSlug}/feedback/${feedback.id}`,
                     )
                   }
                 >
@@ -393,7 +395,7 @@ export function FeedbackListScoped({
                     className="cursor-pointer"
                     onClick={() =>
                       router.push(
-                        `/dashboard/${projectSlug}/feedback/${row.original.id}`,
+                        `/dashboard/${activeOrg.slug}/${projectSlug}/feedback/${row.original.id}`,
                       )
                     }
                   >

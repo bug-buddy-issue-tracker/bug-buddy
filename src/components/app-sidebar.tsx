@@ -10,7 +10,9 @@ import {
 import * as React from "react";
 
 import { useSession } from "@/components/auth/session-provider";
+import { OrgSwitcher } from "@/components/dashboard/org-switcher";
 import { useProject } from "@/components/dashboard/project-context";
+import { ProjectSwitcher } from "@/components/dashboard/project-switcher";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -27,12 +29,12 @@ import { HexagonIconNegative } from "./icon";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useSession();
-  const { currentProjectSlug } = useProject();
+  const { currentProjectSlug, orgSlug } = useProject();
   const isAdmin = user?.role === "admin";
 
   const projectBase = currentProjectSlug
-    ? `/dashboard/${currentProjectSlug}`
-    : "/dashboard";
+    ? `/dashboard/${orgSlug}/${currentProjectSlug}`
+    : `/dashboard/${orgSlug}`;
 
   const navItems = [
     {
@@ -81,6 +83,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <div className="flex-col gap-2 px-2 flex md:hidden">
+          <OrgSwitcher className="w-full" />
+          <ProjectSwitcher className="w-full" />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navItems} />

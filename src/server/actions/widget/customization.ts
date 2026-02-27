@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAuth } from "@/lib/auth/helpers";
+import { getProjectWithOrgCheck, hasMinRole } from "@/lib/auth/org-access";
 import { prisma } from "@/lib/prisma";
 import { widgetCustomizationUpdateSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
@@ -10,22 +10,15 @@ export async function saveWidgetCustomization(
   data: z.infer<typeof widgetCustomizationUpdateSchema>,
 ) {
   try {
-    const session = await requireAuth();
     const validated = widgetCustomizationUpdateSchema.parse(data);
+    const { project, member } = await getProjectWithOrgCheck(
+      validated.projectId,
+    );
 
-    // Verify project belongs to user
-    const project = await prisma.project.findFirst({
-      where: {
-        id: validated.projectId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!project) {
-      return { success: false, error: "Project not found" };
+    if (!hasMinRole(member.role, "admin")) {
+      return { success: false, error: "Insufficient permissions" };
     }
 
-    // Upsert customization
     const updateData = {
       primaryColor: validated.primaryColor,
       secondaryColor: validated.secondaryColor,

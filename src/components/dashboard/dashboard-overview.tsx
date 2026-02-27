@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useOrg } from "./org-context";
 
 interface Feedback {
   id: string;
@@ -64,6 +65,7 @@ export function DashboardOverview({
   projectSlug,
 }: DashboardOverviewProps) {
   const router = useRouter();
+  const { activeOrg } = useOrg();
 
   // Show empty state if no projects
   if (!hasProjects) {
@@ -173,8 +175,8 @@ export function DashboardOverview({
           <Link
             href={
               projectSlug
-                ? `/dashboard/${projectSlug}/feedback`
-                : "/dashboard/feedback"
+                ? `/dashboard/${activeOrg.slug}/${projectSlug}/feedback`
+                : "/dashboard"
             }
           >
             View All
@@ -197,8 +199,8 @@ export function DashboardOverview({
               onClick={() =>
                 router.push(
                   projectSlug
-                    ? `/dashboard/${projectSlug}/feedback/${item.id}`
-                    : `/dashboard/feedback/${item.id}`,
+                    ? `/dashboard/${activeOrg.slug}/${projectSlug}/feedback/${item.id}`
+                    : `/dashboard`,
                 )
               }
             >

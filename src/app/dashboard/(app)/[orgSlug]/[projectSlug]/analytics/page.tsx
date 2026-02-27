@@ -1,7 +1,9 @@
 import { AnalyticsDashboard } from "@/components/dashboard/analytics-dashboard";
 import { getSession } from "@/lib/auth/helpers";
-import { getUserFeedbackForAnalytics } from "@/server/services/analytics.service";
-import { getUserProjectBySlug } from "@/server/services/projects.service";
+import { requireOrgMember } from "@/lib/auth/org-access";
+import { prisma } from "@/lib/prisma";
+import { getOrgFeedbackForAnalytics } from "@/server/services/analytics.service";
+import { getOrgProjectBySlug } from "@/server/services/projects.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -14,24 +16,28 @@ export const metadata: Metadata = {
 export default async function ProjectAnalyticsPage({
   params,
 }: {
-  params: Promise<{ projectSlug: string }>;
+  params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   const session = await getSession();
-  const { projectSlug } = await params;
+  const { orgSlug, projectSlug } = await params;
 
   if (!session?.user) {
     redirect("/");
   }
 
-  const project = await getUserProjectBySlug(session.user.id, projectSlug);
+  const org = await prisma.organization.findUnique({
+    where: { slug: orgSlug },
+  });
+  if (!org) redirect("/dashboard");
+
+  await requireOrgMember(org.id);
+
+  const project = await getOrgProjectBySlug(org.id, projectSlug);
   if (!project) {
-    redirect("/dashboard");
+    redirect(`/dashboard/${orgSlug}`);
   }
 
-  const feedback = await getUserFeedbackForAnalytics(
-    session.user.id,
-    project.id,
-  );
+  const feedback = await getOrgFeedbackForAnalytics(org.id, project.id);
 
   const transformedFeedback = feedback.map((f) => ({
     ...f,

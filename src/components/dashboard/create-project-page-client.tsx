@@ -28,6 +28,7 @@ import * as React from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useOrg } from "./org-context";
 import { LAST_PROJECT_SLUG_KEY } from "./project-context";
 
 type ProjectForm = z.input<typeof createProjectSchema>;
@@ -59,16 +60,16 @@ export function CreateProjectPageClient({
   onCancelAction?: () => void;
 }) {
   const router = useRouter();
+  const { activeOrg } = useOrg();
 
   const [creating, setCreating] = React.useState(false);
 
   const form = useForm<ProjectForm>({
-    // `createProjectSchema` transforms some string inputs into arrays.
-    // We keep the form values as the schema input type, and let the server parse/transform.
     resolver: zodResolver(createProjectSchema) as never,
     defaultValues: {
       name: "",
       description: "",
+      organizationId: activeOrg.id,
       installationId: initialInstallationId || "",
       repository: "",
       allowedDomains: "",
@@ -175,7 +176,9 @@ export function CreateProjectPageClient({
         } catch {
           // ignore
         }
-        router.push(`/dashboard/${result.project.slug}/settings?tab=widget`);
+        router.push(
+          `/dashboard/${activeOrg.slug}/${result.project.slug}/settings?tab=widget`,
+        );
       }
     } catch (error) {
       console.error("Error creating project:", error);
@@ -224,7 +227,6 @@ export function CreateProjectPageClient({
                   aria-invalid={fieldState.invalid}
                 />
                 <FieldDescription>
-                  Slug preview:{" "}
                   <code className="px-1 py-0.5 bg-muted rounded">
                     {slugPreview}
                   </code>{" "}

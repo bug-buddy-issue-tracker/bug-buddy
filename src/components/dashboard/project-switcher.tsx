@@ -42,7 +42,7 @@ export function ProjectSwitcher({ className }: { className?: string }) {
           <Button
             variant="outline"
             className={cn(
-              "h-9 gap-2 justify-between min-w-[220px] active:scale-100",
+              "h-9 gap-2 justify-between active:scale-100",
               className,
             )}
           >

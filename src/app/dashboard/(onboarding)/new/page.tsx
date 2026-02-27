@@ -1,5 +1,8 @@
 import { CreateProjectPageClient } from "@/components/dashboard/create-project-page-client";
+import { OnboardingOrgCreate } from "@/components/dashboard/onboarding-org-create";
+import { OrgProvider } from "@/components/dashboard/org-context";
 import { getSession } from "@/lib/auth/helpers";
+import { prisma } from "@/lib/prisma";
 import { getInstallationRepositories } from "@/server/actions/github/app/installation-repositories";
 import { getUserDefaultGitHubAppInstallationId } from "@/server/actions/github/app/user-installation";
 import type { Metadata } from "next";
@@ -22,6 +25,36 @@ export default async function NewProjectPage({
     redirect("/");
   }
 
+  const memberships = await prisma.member.findMany({
+    where: { userId: session.user.id },
+    include: { organization: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (memberships.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto bg-background rounded-lg p-4 md:p-8">
+        <div>
+          <h1 className="text-3xl font-bold">Create your organization</h1>
+          <p className="text-muted-foreground">
+            Create an organization first, then you can add projects to it.
+          </p>
+        </div>
+        <OnboardingOrgCreate />
+      </div>
+    );
+  }
+
+  const orgs = memberships.map((m) => ({
+    id: m.organization.id,
+    name: m.organization.name,
+    slug: m.organization.slug,
+    logo: m.organization.logo,
+    role: m.role,
+  }));
+
+  const activeOrg = orgs[0]!;
+
   const installationIdFromUrl = sp.installation_id || "";
   const defaultInstallation = await getUserDefaultGitHubAppInstallationId();
 
@@ -33,22 +66,24 @@ export default async function NewProjectPage({
     : null;
 
   return (
-    <div className="max-w-2xl mx-auto bg-background rounded-lg p-4 md:p-8">
-      <div>
-        <h1 className="text-3xl font-bold">Create a project</h1>
-        <p className="text-muted-foreground">
-          Create a project to start collecting feedback and configure your
-          widget embed code.
-        </p>
-      </div>
+    <OrgProvider orgs={orgs} activeOrg={activeOrg}>
+      <div className="max-w-2xl mx-auto bg-background rounded-lg p-4 md:p-8">
+        <div>
+          <h1 className="text-3xl font-bold">Create a project</h1>
+          <p className="text-muted-foreground">
+            Create a project in <strong>{activeOrg.name}</strong> to start
+            collecting feedback.
+          </p>
+        </div>
 
-      <CreateProjectPageClient
-        initialInstallationId={installationId}
-        repositories={reposResult?.success ? reposResult.repositories : []}
-        repoError={
-          reposResult && !reposResult.success ? reposResult.error : null
-        }
-      />
-    </div>
+        <CreateProjectPageClient
+          initialInstallationId={installationId}
+          repositories={reposResult?.success ? reposResult.repositories : []}
+          repoError={
+            reposResult && !reposResult.success ? reposResult.error : null
+          }
+        />
+      </div>
+    </OrgProvider>
   );
 }

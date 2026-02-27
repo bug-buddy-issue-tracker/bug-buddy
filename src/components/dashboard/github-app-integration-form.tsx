@@ -57,9 +57,10 @@ export function GitHubAppIntegrationForm({
   onDirtyChange,
 }: GitHubAppIntegrationFormProps) {
   const [saving, setSaving] = React.useState(false);
-  const params = useParams<{ projectSlug?: string }>();
+  const params = useParams<{ orgSlug?: string; projectSlug?: string }>();
   const projectSlug =
     typeof params.projectSlug === "string" ? params.projectSlug : null;
+  const orgSlug = typeof params.orgSlug === "string" ? params.orgSlug : null;
 
   const initialRepository = initialData
     ? `${initialData.repositoryOwner}/${initialData.repositoryName}`
@@ -126,9 +127,10 @@ export function GitHubAppIntegrationForm({
 
   const installAction = startGitHubAppInstall.bind(null, {
     projectId,
-    redirectUrl: projectSlug
-      ? `/dashboard/${projectSlug}/settings?tab=github`
-      : `/dashboard/settings?project=${projectId}&tab=github`,
+    redirectUrl:
+      orgSlug && projectSlug
+        ? `/dashboard/${orgSlug}/${projectSlug}/settings?tab=github`
+        : `/dashboard`,
   });
 
   const onSubmit = async (data: GitHubIntegrationForm) => {

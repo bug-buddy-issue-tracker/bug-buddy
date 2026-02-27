@@ -113,15 +113,19 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // Create notification for the project owner
-          await prisma.notification.create({
-            data: {
-              userId: dbIssue.feedback.project.userId,
+          // Create notifications for all org members
+          const orgMembers = await prisma.member.findMany({
+            where: { organizationId: dbIssue.feedback.project.organizationId },
+            select: { userId: true },
+          });
+          await prisma.notification.createMany({
+            data: orgMembers.map((m) => ({
+              userId: m.userId,
               issueId: dbIssue.id,
               type: "issue_state_change",
               title: `Issue ${action === "closed" ? "closed" : "reopened"}`,
               message: `Issue #${issue.number} in ${repoOwner}/${repoName} was ${action}${issue.user?.login ? ` by ${issue.user.login}` : ""}`,
-            },
+            })),
           });
         }
 
@@ -184,15 +188,19 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // Create notification for the project owner
-        await prisma.notification.create({
-          data: {
-            userId: dbIssue.feedback.project.userId,
+        // Create notifications for all org members
+        const commentOrgMembers = await prisma.member.findMany({
+          where: { organizationId: dbIssue.feedback.project.organizationId },
+          select: { userId: true },
+        });
+        await prisma.notification.createMany({
+          data: commentOrgMembers.map((m) => ({
+            userId: m.userId,
             issueId: dbIssue.id,
             type: "issue_comment",
             title: "New comment on issue",
             message: `${comment.user?.login || "Someone"} commented on issue #${issue.number} in ${repoOwner}/${repoName}`,
-          },
+          })),
         });
       }
     }

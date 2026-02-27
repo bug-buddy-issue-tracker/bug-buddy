@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAuth } from "@/lib/auth/helpers";
+import { getProjectWithOrgCheck, hasMinRole } from "@/lib/auth/org-access";
 import { prisma } from "@/lib/prisma";
 import { updateProjectSchema } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
@@ -8,25 +8,15 @@ import { z } from "zod";
 
 export async function updateProject(data: z.infer<typeof updateProjectSchema>) {
   try {
-    const session = await requireAuth();
     const validated = updateProjectSchema.parse(data);
+    const { project, member } = await getProjectWithOrgCheck(
+      validated.projectId,
+    );
 
-    // Verify project belongs to user
-    const project = await prisma.project.findFirst({
-      where: {
-        id: validated.projectId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!project) {
-      return {
-        success: false,
-        error: "Project not found",
-      };
+    if (!hasMinRole(member.role, "admin")) {
+      return { success: false, error: "Insufficient permissions" };
     }
 
-    // Update project
     await prisma.project.update({
       where: { id: validated.projectId },
       data: {
@@ -39,9 +29,7 @@ export async function updateProject(data: z.infer<typeof updateProjectSchema>) {
 
     revalidatePath(`/dashboard/${project.slug}/settings`, "page");
 
-    return {
-      success: true,
-    };
+    return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {

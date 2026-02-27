@@ -67,6 +67,8 @@ interface ProjectSettingsFormProps {
   apiKey: string;
   secretKey: string | null;
   allowedDomains?: string[];
+  isOwner?: boolean;
+  isAdmin?: boolean;
 }
 
 export function ProjectSettingsForm({
@@ -75,6 +77,8 @@ export function ProjectSettingsForm({
   apiKey,
   secretKey: initialSecretKey,
   allowedDomains = [],
+  isOwner = true,
+  isAdmin = true,
 }: ProjectSettingsFormProps) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
@@ -461,16 +465,18 @@ export function ProjectSettingsForm({
               </FieldDescription>
             </Field>
 
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => setShowRefreshDialog(true)}
-              disabled={refreshing}
-              className="mt-2"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh Client Key
-            </Button>
+            {isOwner && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setShowRefreshDialog(true)}
+                disabled={refreshing}
+                className="mt-2"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Client Key
+              </Button>
+            )}
           </div>
 
           <div className="mt-6 border-t pt-6">
@@ -521,37 +527,41 @@ export function ProjectSettingsForm({
               </FieldDescription>
             </Field>
 
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => setShowRefreshSecretDialog(true)}
-              disabled={refreshingSecret}
-              className="mt-2"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh Secret Key
-            </Button>
+            {isOwner && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setShowRefreshSecretDialog(true)}
+                disabled={refreshingSecret}
+                className="mt-2"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Secret Key
+              </Button>
+            )}
           </div>
 
-          <div className="mt-6 space-y-4 border-t pt-6">
-            <Field>
-              <FieldLabel>Danger Zone</FieldLabel>
-              <FieldDescription>
-                Once you delete a project, there is no going back. Please be
-                certain.
-              </FieldDescription>
-            </Field>
+          {isOwner && (
+            <div className="mt-6 space-y-4 border-t pt-6">
+              <Field>
+                <FieldLabel>Danger Zone</FieldLabel>
+                <FieldDescription>
+                  Once you delete a project, there is no going back. Please be
+                  certain.
+                </FieldDescription>
+              </Field>
 
-            <Button
-              variant="destructive"
-              type="button"
-              onClick={() => setShowDeleteDialog(true)}
-              disabled={deleting}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Project
-            </Button>
-          </div>
+              <Button
+                variant="destructive"
+                type="button"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={deleting}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Project
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

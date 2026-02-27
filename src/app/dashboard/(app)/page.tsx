@@ -1,6 +1,6 @@
-import { DashboardRedirector } from "@/components/dashboard/dashboard-redirector";
 import { getSession } from "@/lib/auth/helpers";
-import { getUserProjectsForSwitcher } from "@/server/services/projects.service";
+import { prisma } from "@/lib/prisma";
+import { getOrgProjectsForSwitcher } from "@/server/services/projects.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -16,15 +16,26 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const projects = await getUserProjectsForSwitcher(session.user.id);
-  const fallbackSlug = projects[0]?.slug || null;
-  const allowedSlugs = projects.map((p) => p.slug);
+  const firstMembership = await prisma.member.findFirst({
+    where: { userId: session.user.id },
+    include: { organization: true },
+    orderBy: { createdAt: "asc" },
+  });
 
-  return (
-    <DashboardRedirector
-      allowedSlugs={allowedSlugs}
-      fallbackSlug={fallbackSlug}
-      suffix=""
-    />
+  if (!firstMembership) {
+    redirect("/dashboard/new");
+  }
+
+  const projects = await getOrgProjectsForSwitcher(
+    firstMembership.organizationId,
+  );
+  const firstProject = projects[0];
+
+  if (!firstProject) {
+    redirect("/dashboard/new");
+  }
+
+  redirect(
+    `/dashboard/${firstMembership.organization.slug}/${firstProject.slug}`,
   );
 }

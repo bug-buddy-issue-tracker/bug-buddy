@@ -15,6 +15,7 @@ type ProjectContextValue = {
   projects: ProjectForSwitcher[];
   currentProject: ProjectForSwitcher | null;
   currentProjectSlug: string | null;
+  orgSlug: string;
   setCurrentProjectSlug: (nextSlug: string) => void;
   upsertProject: (project: ProjectForSwitcher) => void;
 };
@@ -23,14 +24,16 @@ const ProjectContext = React.createContext<ProjectContextValue | null>(null);
 
 export function ProjectProvider({
   projects,
+  orgSlug,
   children,
 }: {
   projects: ProjectForSwitcher[];
+  orgSlug: string;
   children: React.ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const params = useParams<{ projectSlug?: string }>();
+  const params = useParams<{ orgSlug?: string; projectSlug?: string }>();
 
   const [projectsState, setProjectsState] =
     React.useState<ProjectForSwitcher[]>(projects);
@@ -44,7 +47,6 @@ export function ProjectProvider({
 
   const [storedSlug, setStoredSlug] = React.useState<string | null>(null);
 
-  // Load last-selected slug from localStorage.
   React.useEffect(() => {
     try {
       setStoredSlug(window.localStorage.getItem(LAST_PROJECT_SLUG_KEY));
@@ -53,7 +55,6 @@ export function ProjectProvider({
     }
   }, []);
 
-  // Persist whenever route slug changes (project-scoped routes).
   React.useEffect(() => {
     if (!routeSlug) return;
     try {
@@ -79,17 +80,11 @@ export function ProjectProvider({
 
   const setCurrentProjectSlug = React.useCallback(
     (nextSlug: string) => {
-      // Determine the current project-scoped suffix, if any, and keep it.
-      const match = pathname.match(/^\/dashboard\/([^/]+)(\/.*)?$/);
-      const first = match?.[1];
-      const suffix = (() => {
-        if (!match) return "";
-        // If we're on a global dashboard page (e.g. /dashboard/new), jump to project root.
-        if (first === "new" || first === "account" || first === "admin") {
-          return "";
-        }
-        return match[2] || "";
-      })();
+      const currentOrgSlug = params.orgSlug || orgSlug;
+
+      // Parse suffix from current path: /dashboard/<orgSlug>/<projectSlug>/<suffix>
+      const match = pathname.match(/^\/dashboard\/[^/]+\/[^/]+(\/.*)?$/);
+      const suffix = match?.[1] || "";
 
       try {
         window.localStorage.setItem(LAST_PROJECT_SLUG_KEY, nextSlug);
@@ -98,9 +93,9 @@ export function ProjectProvider({
         // ignore
       }
 
-      router.push(`/dashboard/${nextSlug}${suffix}`);
+      router.push(`/dashboard/${currentOrgSlug}/${nextSlug}${suffix}`);
     },
-    [pathname, router],
+    [pathname, router, params.orgSlug, orgSlug],
   );
 
   const upsertProject = React.useCallback((project: ProjectForSwitcher) => {
@@ -120,10 +115,17 @@ export function ProjectProvider({
       projects: projectsState,
       currentProject,
       currentProjectSlug: currentProject?.slug || null,
+      orgSlug,
       setCurrentProjectSlug,
       upsertProject,
     }),
-    [projectsState, currentProject, setCurrentProjectSlug, upsertProject],
+    [
+      projectsState,
+      currentProject,
+      orgSlug,
+      setCurrentProjectSlug,
+      upsertProject,
+    ],
   );
 
   return (

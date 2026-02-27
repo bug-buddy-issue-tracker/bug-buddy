@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAuth } from "@/lib/auth/helpers";
+import { getProjectWithOrgCheck, hasMinRole } from "@/lib/auth/org-access";
 import { prisma } from "@/lib/prisma";
 import { refreshApiKeySchema } from "@/lib/schemas";
 import { randomBytes } from "crypto";
@@ -11,41 +11,28 @@ export async function refreshSecretKey(
   data: z.infer<typeof refreshApiKeySchema>,
 ) {
   try {
-    const session = await requireAuth();
     const validated = refreshApiKeySchema.parse(data);
+    const { project, member } = await getProjectWithOrgCheck(
+      validated.projectId,
+    );
 
-    // Verify project belongs to user
-    const project = await prisma.project.findFirst({
-      where: {
-        id: validated.projectId,
-        userId: session.user.id,
-      },
-    });
-
-    if (!project) {
+    if (!hasMinRole(member.role, "owner")) {
       return {
         success: false,
-        error: "Project not found",
+        error: "Only the organization owner can refresh secret keys",
       };
     }
 
-    // Generate new secret key
     const newSecretKey = `bb_sk_${randomBytes(32).toString("hex")}`;
 
-    // Update project with new secret key
     const updatedProject = await prisma.project.update({
       where: { id: validated.projectId },
-      data: {
-        secretKey: newSecretKey,
-      },
+      data: { secretKey: newSecretKey },
     });
 
     revalidatePath(`/dashboard/${project.slug}/settings`, "page");
 
-    return {
-      success: true,
-      secretKey: updatedProject.secretKey,
-    };
+    return { success: true, secretKey: updatedProject.secretKey };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return {

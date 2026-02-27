@@ -3,7 +3,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
@@ -32,12 +31,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Bud Buddy Widget */}
-        <Script
-          src="https://bugbuddy.dev/widget.js"
-          data-project-key="bb_d26611187cc91eb17a65d0975c42a38b23208c34e1a18ad38d583789db02c568"
-          data-app-url="https://bugbuddy.dev"
-        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

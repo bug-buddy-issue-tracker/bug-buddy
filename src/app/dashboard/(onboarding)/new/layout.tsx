@@ -14,7 +14,7 @@ export default function OnboardingLayout({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   return (
-    <div className="space-y-6 p-4 md:p-8 bg-muted">
+    <div className="space-y-6 p-4 md:p-8 bg-muted min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center justify-between gap-2 ">
           <h1>Bug Buddy</h1>

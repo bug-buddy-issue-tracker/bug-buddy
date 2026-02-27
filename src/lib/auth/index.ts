@@ -1,17 +1,45 @@
+import { OrgInvitationEmail } from "@/emails/org-invitation.email";
+import { emailBaseUrl } from "@/emails/utils";
 import { serverEnv } from "@/env";
+import { transporter } from "@/lib/mail-transporter";
 import { prisma } from "@/lib/prisma";
 import { sendWelcomeEmailWorkflow } from "@/server/queues/workflows/emails/send-welcome-email.workflow";
+import { render } from "@react-email/components";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin, lastLoginMethod } from "better-auth/plugins";
+import { admin, lastLoginMethod, organization } from "better-auth/plugins";
 import { start } from "workflow/api";
+import { ac, admin as adminRole, member, owner } from "./permissions";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
 
-  plugins: [lastLoginMethod(), admin()],
+  plugins: [
+    lastLoginMethod(),
+    admin(),
+    organization({
+      ac,
+      roles: { owner, admin: adminRole, member },
+      async sendInvitationEmail(data) {
+        const inviteLink = `${emailBaseUrl}/accept-invitation/${data.id}`;
+        const html = await render(
+          OrgInvitationEmail({
+            inviterName: data.inviter.user.name || data.inviter.user.email,
+            organizationName: data.organization.name,
+            inviteLink,
+          }),
+        );
+        await transporter.sendMail({
+          from: "no-reply@notifications.bugbuddy.dev",
+          to: data.email,
+          subject: `You've been invited to ${data.organization.name} on Bug Buddy`,
+          html,
+        });
+      },
+    }),
+  ],
   emailAndPassword: {
     enabled: false,
   },

@@ -32,16 +32,24 @@ export async function startGitHubAppInstall(
     throw new Error("GITHUB_APP_SLUG is not configured");
   }
 
-  // Ensure user owns the project.
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, userId: session.user.id },
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: { organization: true },
   });
   if (!project) {
     throw new Error("Project not found");
   }
 
+  const membership = await prisma.member.findFirst({
+    where: { userId: session.user.id, organizationId: project.organizationId },
+  });
+  if (!membership) {
+    throw new Error("Not a member of this organization");
+  }
+
   const finalRedirectUrl =
-    redirectUrl || `/dashboard/${project.slug}/settings?tab=github`;
+    redirectUrl ||
+    `/dashboard/${project.organization.slug}/${project.slug}/settings?tab=github`;
 
   // Persist a short-lived state value to prevent CSRF.
   const state = crypto.randomUUID();

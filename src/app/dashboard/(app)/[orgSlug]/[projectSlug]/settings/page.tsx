@@ -1,6 +1,8 @@
 import { ProjectScopedSettingsForm } from "@/components/dashboard/project-scoped-settings-form";
 import { getSession } from "@/lib/auth/helpers";
-import { getUserProjectBySlug } from "@/server/services/projects.service";
+import { requireOrgMember } from "@/lib/auth/org-access";
+import { prisma } from "@/lib/prisma";
+import { getOrgProjectBySlug } from "@/server/services/projects.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -13,18 +15,25 @@ export const metadata: Metadata = {
 export default async function ProjectSettingsPage({
   params,
 }: {
-  params: Promise<{ projectSlug: string }>;
+  params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   const session = await getSession();
-  const { projectSlug } = await params;
+  const { orgSlug, projectSlug } = await params;
 
   if (!session?.user) {
     redirect("/");
   }
 
-  const project = await getUserProjectBySlug(session.user.id, projectSlug);
+  const org = await prisma.organization.findUnique({
+    where: { slug: orgSlug },
+  });
+  if (!org) redirect("/dashboard");
+
+  const { member } = await requireOrgMember(org.id);
+
+  const project = await getOrgProjectBySlug(org.id, projectSlug);
   if (!project) {
-    redirect("/dashboard");
+    redirect(`/dashboard/${orgSlug}`);
   }
 
   return (
@@ -59,6 +68,7 @@ export default async function ProjectSettingsPage({
             }
           : null,
       }}
+      memberRole={member.role}
     />
   );
 }

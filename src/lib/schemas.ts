@@ -8,6 +8,7 @@ export const DOMAIN_REGEX =
 export const createProjectSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   description: z.string().optional(),
+  organizationId: z.string().min(1, "Organization is required"),
   installationId: z.string().min(1, "GitHub App installation is required"),
   repository: z.string().min(1, "Repository is required"),
   allowedDomains: z

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { FeedbackWhereInput } from "@/server/prisma/generated/prisma/models";
 
 interface GetFeedbackOptions {
-  userId: string;
+  organizationId: string;
   projectId?: string;
   status?: string;
   title?: string;
@@ -11,9 +11,9 @@ interface GetFeedbackOptions {
   limit?: number;
 }
 
-export async function getUserFeedback(options: GetFeedbackOptions) {
+export async function getOrgFeedback(options: GetFeedbackOptions) {
   const {
-    userId,
+    organizationId,
     projectId,
     status,
     title,
@@ -22,10 +22,9 @@ export async function getUserFeedback(options: GetFeedbackOptions) {
     limit,
   } = options;
 
-  // Build where clause for filtering
   const where: FeedbackWhereInput = {
     project: {
-      userId,
+      organizationId,
     },
   };
 
@@ -44,7 +43,6 @@ export async function getUserFeedback(options: GetFeedbackOptions) {
     ];
   }
 
-  // Build orderBy clause for sorting
   let orderBy:
     | { createdAt?: "asc" | "desc" }
     | { title?: "asc" | "desc" }
@@ -84,14 +82,14 @@ export async function getUserFeedback(options: GetFeedbackOptions) {
   });
 }
 
-export async function getUserFeedbackForAnalytics(
-  userId: string,
+export async function getOrgFeedbackForAnalytics(
+  organizationId: string,
   projectId?: string,
 ) {
   return prisma.feedback.findMany({
     where: {
       project: {
-        userId,
+        organizationId,
       },
       ...(projectId ? { projectId } : {}),
     },
@@ -115,12 +113,15 @@ export async function getUserFeedbackForAnalytics(
   });
 }
 
-export async function getFeedbackById(userId: string, feedbackId: string) {
+export async function getFeedbackById(
+  organizationId: string,
+  feedbackId: string,
+) {
   return prisma.feedback.findFirst({
     where: {
       id: feedbackId,
       project: {
-        userId,
+        organizationId,
       },
     },
     include: {
@@ -144,12 +145,15 @@ export async function getFeedbackById(userId: string, feedbackId: string) {
   });
 }
 
-export async function getFeedbackMetadata(userId: string, feedbackId: string) {
+export async function getFeedbackMetadata(
+  organizationId: string,
+  feedbackId: string,
+) {
   return prisma.feedback.findFirst({
     where: {
       id: feedbackId,
       project: {
-        userId,
+        organizationId,
       },
     },
     select: {
@@ -165,95 +169,47 @@ export async function getFeedbackMetadata(userId: string, feedbackId: string) {
   });
 }
 
-export async function getUserFeedbackStats(userId: string) {
+export async function getOrgFeedbackStats(organizationId: string) {
   const [total, open, inProgress, closed] = await Promise.all([
     prisma.feedback.count({
-      where: {
-        project: {
-          userId,
-        },
-      },
+      where: { project: { organizationId } },
     }),
     prisma.feedback.count({
-      where: {
-        project: {
-          userId,
-        },
-        status: "open",
-      },
+      where: { project: { organizationId }, status: "open" },
     }),
     prisma.feedback.count({
-      where: {
-        project: {
-          userId,
-        },
-        status: "in-progress",
-      },
+      where: { project: { organizationId }, status: "in-progress" },
     }),
     prisma.feedback.count({
-      where: {
-        project: {
-          userId,
-        },
-        status: "closed",
-      },
+      where: { project: { organizationId }, status: "closed" },
     }),
   ]);
 
-  return {
-    total,
-    open,
-    inProgress,
-    closed,
-  };
+  return { total, open, inProgress, closed };
 }
 
-export async function getUserFeedbackStatsForProject(
-  userId: string,
+export async function getOrgFeedbackStatsForProject(
+  organizationId: string,
   projectId: string,
 ) {
   const [total, open, inProgress, closed] = await Promise.all([
     prisma.feedback.count({
-      where: {
-        project: {
-          userId,
-        },
-        projectId,
-      },
+      where: { project: { organizationId }, projectId },
+    }),
+    prisma.feedback.count({
+      where: { project: { organizationId }, projectId, status: "open" },
     }),
     prisma.feedback.count({
       where: {
-        project: {
-          userId,
-        },
-        projectId,
-        status: "open",
-      },
-    }),
-    prisma.feedback.count({
-      where: {
-        project: {
-          userId,
-        },
+        project: { organizationId },
         projectId,
         status: "in-progress",
       },
     }),
     prisma.feedback.count({
-      where: {
-        project: {
-          userId,
-        },
-        projectId,
-        status: "closed",
-      },
+      where: { project: { organizationId }, projectId, status: "closed" },
     }),
   ]);
 
-  return {
-    total,
-    open,
-    inProgress,
-    closed,
-  };
+  return { total, open, inProgress, closed };
 }
