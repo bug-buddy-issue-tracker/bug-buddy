@@ -1,5 +1,8 @@
 version: "3.8"
 
+# MailHog: local SMTP server that catches outgoing mail. Web UI: http://localhost:8025
+# In .env use: EMAIL_HOST=localhost EMAIL_PORT=1025 EMAIL_USER=mailhog EMAIL_PASSWORD=mailhog
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -33,6 +36,14 @@ services:
       timeout: 5s
       retries: 5
     command: redis-server --appendonly yes
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: bug-buddy-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
 
 volumes:
   postgres_data:

@@ -34,6 +34,11 @@ type Project = {
     email: string;
     image: string | null;
   };
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   _count: {
     feedback: number;
   };
@@ -85,6 +90,7 @@ export function AdminProjectsTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Project</TableHead>
+              <TableHead>Organization</TableHead>
               <TableHead>Owner</TableHead>
               <TableHead>Client Key</TableHead>
               <TableHead>Feedback</TableHead>
@@ -94,14 +100,14 @@ export function AdminProjectsTable() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center py-8 text-destructive"
                 >
                   Error: {error.message}
@@ -109,7 +115,7 @@ export function AdminProjectsTable() {
               </TableRow>
             ) : projects.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   No projects found
                 </TableCell>
               </TableRow>
@@ -126,6 +132,7 @@ export function AdminProjectsTable() {
                       )}
                     </div>
                   </TableCell>
+                  <TableCell>{project.organization.slug}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">

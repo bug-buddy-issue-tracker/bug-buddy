@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Admin | Bug Buddy",
-  description: "Admin dashboard for managing users and projects",
+  description:
+    "Admin dashboard for managing users, organizations, and projects",
 };
 
 export default async function AdminPage() {

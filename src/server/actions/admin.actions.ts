@@ -39,6 +39,13 @@ export async function getAllProjects({
             image: true,
           },
         },
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
         _count: {
           select: {
             feedback: true,
@@ -63,6 +70,88 @@ export async function getAllProjects({
 
   return {
     projects: projectsWithStringDates,
+    total,
+  };
+}
+
+export async function getAllOrganizations({
+  limit = 10,
+  offset = 0,
+  search = "",
+}: {
+  limit?: number;
+  offset?: number;
+  search?: string;
+}) {
+  const session = await getSession();
+
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  const where = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { slug: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [organizations, total] = await Promise.all([
+    prisma.organization.findMany({
+      where,
+      include: {
+        _count: {
+          select: {
+            members: true,
+            projects: true,
+          },
+        },
+        members: {
+          where: { role: "owner" },
+          take: 1,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.organization.count({ where }),
+  ]);
+
+  return {
+    organizations: organizations.map((org) => {
+      const ownerMember = org.members[0];
+      return {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        logo: org.logo,
+        createdAt: org.createdAt.toISOString(),
+        _count: org._count,
+        owner: ownerMember?.user
+          ? {
+              id: ownerMember.user.id,
+              name: ownerMember.user.name,
+              email: ownerMember.user.email,
+              image: ownerMember.user.image,
+            }
+          : null,
+      };
+    }),
     total,
   };
 }
