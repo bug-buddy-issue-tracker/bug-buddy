@@ -21,7 +21,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth/client";
-import { hasMinRole } from "@/lib/auth/role-utils";
 import { Crown, Mail, Shield, Trash2, User, UserMinus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -71,7 +70,6 @@ export function OrgSettingsClient({
 }: OrgSettingsClientProps) {
   const router = useRouter();
   const isOwner = currentUserRole === "owner";
-  const isAdmin = hasMinRole(currentUserRole, "admin");
 
   const [members, setMembers] = React.useState(initialMembers);
   const [invitations, setInvitations] = React.useState(initialInvitations);
@@ -184,6 +182,26 @@ export function OrgSettingsClient({
     }
   }
 
+  if (!isOwner) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Organization Settings</h1>
+          <p className="text-muted-foreground">
+            Manage members, invitations, and settings for{" "}
+            <strong>{org.name}</strong>
+          </p>
+        </div>
+        <div className="rounded-lg border border-muted bg-muted/30 p-6 text-center">
+          <p className="text-muted-foreground">
+            Only organization owners can manage members, invitations, and
+            organization settings.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -197,8 +215,8 @@ export function OrgSettingsClient({
       <Tabs defaultValue="members">
         <TabsList>
           <TabsTrigger value="members">Members</TabsTrigger>
-          {isAdmin && <TabsTrigger value="invite">Invite</TabsTrigger>}
-          {isOwner && <TabsTrigger value="danger">Danger Zone</TabsTrigger>}
+          <TabsTrigger value="invite">Invite</TabsTrigger>
+          <TabsTrigger value="danger">Danger Zone</TabsTrigger>
         </TabsList>
 
         <TabsContent value="members" className="space-y-4 mt-4">
@@ -233,20 +251,18 @@ export function OrgSettingsClient({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {isAdmin && m.user.id !== currentUserId ? (
+                    {m.user.id !== currentUserId ? (
                       <>
                         <Select
                           value={m.role}
                           onValueChange={(val) => handleUpdateRole(m.id, val)}
-                          disabled={m.role === "owner" && !isOwner}
+                          disabled={m.role === "owner"}
                         >
                           <SelectTrigger className="w-[120px] h-8">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {isOwner && (
-                              <SelectItem value="owner">Owner</SelectItem>
-                            )}
+                            <SelectItem value="owner">Owner</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                             <SelectItem value="member">Member</SelectItem>
                           </SelectContent>
@@ -273,126 +289,119 @@ export function OrgSettingsClient({
           </div>
         </TabsContent>
 
-        {isAdmin && (
-          <TabsContent value="invite" className="space-y-6 mt-4">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Invite a member</h3>
-              <form onSubmit={handleInvite} className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="email@example.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  required
-                  className="flex-1"
-                />
-                <Select value={inviteRole} onValueChange={setInviteRole}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="member">Member</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button type="submit" loading={inviting}>
-                  <Mail className="size-4 mr-2" />
-                  Invite
-                </Button>
-              </form>
-            </div>
-
-            {invitations.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Pending invitations</h3>
-                <div className="rounded-lg border">
-                  {invitations.map((inv, idx) => (
-                    <div key={inv.id}>
-                      {idx > 0 && <Separator />}
-                      <div className="flex items-center justify-between p-4">
-                        <div>
-                          <p className="text-sm font-medium">{inv.email}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Role: {inv.role} &middot; Expires{" "}
-                            {new Date(inv.expiresAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => handleCancelInvitation(inv.id)}
-                        >
-                          <X className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        )}
-
-        {isOwner && (
-          <TabsContent value="danger" className="mt-4">
-            <div className="rounded-lg border border-destructive/50 p-6 space-y-4">
-              <div>
-                <h3 className="text-lg font-medium text-destructive">
-                  Delete Organization
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Permanently delete <strong>{org.name}</strong> and all its
-                  projects, feedback, and data. This action cannot be undone.
-                </p>
-              </div>
-              <Button
-                variant="destructive"
-                onClick={() => setDeleteConfirmOpen(true)}
-              >
-                <Trash2 className="size-4 mr-2" />
-                Delete Organization
+        <TabsContent value="invite" className="space-y-6 mt-4">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Invite a member</h3>
+            <form onSubmit={handleInvite} className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="email@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                required
+                className="flex-1"
+              />
+              <Select value={inviteRole} onValueChange={setInviteRole}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" loading={inviting}>
+                <Mail className="size-4 mr-2" />
+                Invite
               </Button>
-            </div>
+            </form>
+          </div>
 
-            <Dialog
-              open={deleteConfirmOpen}
-              onOpenChange={setDeleteConfirmOpen}
+          {invitations.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Pending invitations</h3>
+              <div className="rounded-lg border">
+                {invitations.map((inv, idx) => (
+                  <div key={inv.id}>
+                    {idx > 0 && <Separator />}
+                    <div className="flex items-center justify-between p-4">
+                      <div>
+                        <p className="text-sm font-medium">{inv.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Role: {inv.role} &middot; Expires{" "}
+                          {new Date(inv.expiresAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => handleCancelInvitation(inv.id)}
+                      >
+                        <X className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="danger" className="mt-4">
+          <div className="rounded-lg border border-destructive/50 p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-medium text-destructive">
+                Delete Organization
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Permanently delete <strong>{org.name}</strong> and all its
+                projects, feedback, and data. This action cannot be undone.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => setDeleteConfirmOpen(true)}
             >
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete Organization</DialogTitle>
-                  <DialogDescription>
-                    This will permanently delete <strong>{org.name}</strong>,
-                    all its projects, feedback, and associated data. Type the
-                    organization name to confirm.
-                  </DialogDescription>
-                </DialogHeader>
-                <Input
-                  placeholder={org.name}
-                  value={deleteConfirmName}
-                  onChange={(e) => setDeleteConfirmName(e.target.value)}
-                />
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setDeleteConfirmOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    loading={deleting}
-                    disabled={deleteConfirmName !== org.name}
-                    onClick={handleDeleteOrg}
-                  >
-                    Delete permanently
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </TabsContent>
-        )}
+              <Trash2 className="size-4 mr-2" />
+              Delete Organization
+            </Button>
+          </div>
+
+          <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Organization</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete <strong>{org.name}</strong>, all
+                  its projects, feedback, and associated data. Type the
+                  organization name to confirm.
+                </DialogDescription>
+              </DialogHeader>
+              <Input
+                placeholder={org.name}
+                value={deleteConfirmName}
+                onChange={(e) => setDeleteConfirmName(e.target.value)}
+              />
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  loading={deleting}
+                  disabled={deleteConfirmName !== org.name}
+                  onClick={handleDeleteOrg}
+                >
+                  Delete permanently
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
       </Tabs>
     </div>
   );
