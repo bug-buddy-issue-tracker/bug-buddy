@@ -12,9 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FolderPlus } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useQueryState } from "nuqs";
 import * as React from "react";
-import { CreateProjectDialog } from "./create-project-dialog";
 import { GitHubAppIntegrationForm } from "./github-app-integration-form";
 import { ProjectSettingsForm } from "./project-settings-form";
 import { WidgetCustomizationForm } from "./widget-customization-form";
@@ -53,8 +54,13 @@ export function ProjectScopedSettingsForm({
   project,
   memberRole = "owner",
 }: ProjectScopedSettingsFormProps) {
+  const params = useParams<{ orgSlug?: string }>();
+  const newProjectHref = params.orgSlug
+    ? `/dashboard/new?org=${encodeURIComponent(params.orgSlug)}`
+    : "/dashboard/new";
   const isOwner = memberRole === "owner";
   const isAdmin = memberRole === "owner" || memberRole === "admin";
+  const canCreateProject = isAdmin;
   const [urlTab, setUrlTab] = useQueryState("tab", {
     defaultValue: "project",
   });
@@ -172,15 +178,14 @@ export function ProjectScopedSettingsForm({
               Select or create a project to configure settings, GitHub
               integration, and widget customization.
             </p>
-            <CreateProjectDialog
-              title="Create a project"
-              trigger={
-                <Button>
+            {canCreateProject && (
+              <Button asChild>
+                <Link href={newProjectHref}>
                   <FolderPlus className="mr-2 h-4 w-4" />
                   Create a Project
-                </Button>
-              }
-            />
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>

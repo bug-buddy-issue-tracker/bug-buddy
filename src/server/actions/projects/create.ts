@@ -11,6 +11,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+/** Create a project. Requires org role admin or owner. */
 export async function createProject(data: z.input<typeof createProjectSchema>) {
   try {
     const validated = createProjectSchema.parse(data);

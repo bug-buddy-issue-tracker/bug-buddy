@@ -2,6 +2,7 @@
 
 import { ChevronsUpDown, Plus } from "lucide-react";
 
+import { hasMinRole } from "@/lib/auth/role-utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,80 +14,78 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CreateProjectDialog } from "./create-project-dialog";
+import { useOrg } from "./org-context";
 import { useProject } from "./project-context";
 
 export function ProjectSwitcher({ className }: { className?: string }) {
-  const { projects, currentProject, setCurrentProjectSlug, upsertProject } =
+  const { projects, currentProject, setCurrentProjectSlug, orgSlug } =
     useProject();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { activeOrg } = useOrg();
+
+  const canCreateProject = hasMinRole(activeOrg.role, "admin");
+  const newProjectHref = orgSlug
+    ? `/dashboard/new?org=${encodeURIComponent(orgSlug)}`
+    : "/dashboard/new";
 
   if (projects.length === 0) {
-    return (
+    return canCreateProject ? (
       <Button asChild variant="outline" className={cn("h-9", className)}>
-        <Link href="/dashboard/new">
+        <Link href={newProjectHref}>
           <Plus className="size-4" />
           Create project
         </Link>
+      </Button>
+    ) : (
+      <Button
+        variant="outline"
+        className={cn("h-9", className)}
+        disabled
+        title="Only admins and owners can create projects"
+      >
+        <span className="text-muted-foreground">No projects</span>
       </Button>
     );
   }
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "h-9 gap-2 justify-between active:scale-100",
-              className,
-            )}
-          >
-            <span className="truncate">
-              {currentProject?.name || "Select project"}
-            </span>
-            <ChevronsUpDown className="size-4 text-muted-foreground" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[260px]">
-          <DropdownMenuLabel>Projects</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {projects.map((p) => (
-            <DropdownMenuItem
-              key={p.id}
-              onClick={() => setCurrentProjectSlug(p.slug)}
-            >
-              <span className="truncate">{p.name}</span>
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            "h-9 gap-2 justify-between active:scale-100",
+            className,
+          )}
+        >
+          <span className="truncate">
+            {currentProject?.name || "Select project"}
+          </span>
+          <ChevronsUpDown className="size-4 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[260px]">
+        <DropdownMenuLabel>Projects</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {projects.map((p) => (
           <DropdownMenuItem
-            onSelect={(e) => {
-              // Keep the dialog mounted; we open it via URL param.
-              // Prevent Radix from treating this as a "selection" action.
-              e.preventDefault();
-              const next = new URLSearchParams(searchParams.toString());
-              next.set("createProject", "1");
-              const qs = next.toString();
-              router.replace(qs ? `${pathname}?${qs}` : pathname);
-            }}
+            key={p.id}
+            onClick={() => setCurrentProjectSlug(p.slug)}
           >
-            <Plus className="size-4" />
-            Create project
+            <span className="truncate">{p.name}</span>
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Must live OUTSIDE the dropdown so it doesn't unmount on close */}
-      <CreateProjectDialog
-        onProjectCreatedAction={(p) => {
-          upsertProject(p);
-        }}
-      />
-    </>
+        ))}
+        {canCreateProject && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href={newProjectHref}>
+                <Plus className="size-4" />
+                Create project
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

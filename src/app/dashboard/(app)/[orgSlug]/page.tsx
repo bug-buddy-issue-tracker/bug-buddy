@@ -1,4 +1,5 @@
 import { OrgHomeContent } from "@/components/dashboard/org-home-content";
+import { hasMinRole } from "@/lib/auth/role-utils";
 import { requireOrgMember } from "@/lib/auth/org-access";
 import { prisma } from "@/lib/prisma";
 import { getOrgProjects } from "@/server/services/projects.service";
@@ -26,7 +27,7 @@ export default async function OrgDashboardPage({
     redirect("/dashboard");
   }
 
-  await requireOrgMember(org.id);
+  const { member } = await requireOrgMember(org.id);
 
   const projects = await getOrgProjects(org.id);
 
@@ -38,11 +39,14 @@ export default async function OrgDashboardPage({
     _count: { feedback: p._count.feedback },
   }));
 
+  const canCreateProject = hasMinRole(member.role, "admin");
+
   return (
     <OrgHomeContent
       orgSlug={org.slug}
       orgName={org.name}
       projects={projectsForHome}
+      canCreateProject={canCreateProject}
     />
   );
 }

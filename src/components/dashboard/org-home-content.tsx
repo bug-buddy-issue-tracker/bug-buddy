@@ -23,11 +23,16 @@ export function OrgHomeContent({
   orgSlug,
   orgName,
   projects,
+  canCreateProject = true,
 }: {
   orgSlug: string;
   orgName: string;
   projects: ProjectForOrgHome[];
+  /** Whether the current user can create projects (admin or owner). Default true for backwards compat. */
+  canCreateProject?: boolean;
 }) {
+  const newProjectHref = `/dashboard/new?org=${encodeURIComponent(orgSlug)}`;
+
   return (
     <div className="space-y-6">
       <div>
@@ -46,12 +51,14 @@ export function OrgHomeContent({
               Create your first project to start collecting feedback with the
               Bug Buddy widget.
             </p>
-            <Button asChild>
-              <Link href={`/dashboard/new?org=${encodeURIComponent(orgSlug)}`}>
-                <Plus className="mr-2 size-4" />
-                Create project
-              </Link>
-            </Button>
+            {canCreateProject && (
+              <Button asChild>
+                <Link href={newProjectHref}>
+                  <Plus className="mr-2 size-4" />
+                  Create project
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -92,16 +99,18 @@ export function OrgHomeContent({
             </Link>
           ))}
 
-          <Button
-            asChild
-            variant="outline"
-            className="flex h-auto min-h-[120px] flex-col items-center justify-center gap-2 border-dashed py-6"
-          >
-            <Link href={`/dashboard/new?org=${encodeURIComponent(orgSlug)}`}>
-              <Plus className="size-8 text-muted-foreground" />
-              <span>Create project</span>
-            </Link>
-          </Button>
+          {canCreateProject && (
+            <Button
+              asChild
+              variant="outline"
+              className="flex h-auto min-h-[120px] flex-col items-center justify-center gap-2 border-dashed py-6"
+            >
+              <Link href={newProjectHref}>
+                <Plus className="size-8 text-muted-foreground" />
+                <span>Create project</span>
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </div>

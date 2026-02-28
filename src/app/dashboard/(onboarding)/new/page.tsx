@@ -2,9 +2,10 @@ import { CreateProjectPageClient } from "@/components/dashboard/create-project-p
 import { OnboardingOrgCreate } from "@/components/dashboard/onboarding-org-create";
 import { OrgProvider } from "@/components/dashboard/org-context";
 import { getSession } from "@/lib/auth/helpers";
+import { hasMinRole } from "@/lib/auth/role-utils";
 import { prisma } from "@/lib/prisma";
 import { getInstallationRepositories } from "@/server/actions/github/app/installation-repositories";
-import { getUserDefaultGitHubAppInstallationId } from "@/server/actions/github/app/user-installation";
+import { getOrgDefaultGitHubAppInstallationId } from "@/server/actions/github/app/user-installation";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -45,7 +46,7 @@ export default async function NewProjectPage({
     );
   }
 
-  const orgs = memberships.map((m) => ({
+  const allOrgs = memberships.map((m) => ({
     id: m.organization.id,
     name: m.organization.name,
     slug: m.organization.slug,
@@ -53,15 +54,22 @@ export default async function NewProjectPage({
     role: m.role,
   }));
 
+  // Only admins and owners can create projects; show only orgs where they have that role
+  const orgs = allOrgs.filter((o) => hasMinRole(o.role, "admin"));
+
+  if (orgs.length === 0) {
+    redirect("/dashboard");
+  }
+
   const orgSlugFromUrl = sp.org?.trim();
   const activeOrg =
     (orgSlugFromUrl && orgs.find((o) => o.slug === orgSlugFromUrl)) || orgs[0]!;
 
   const installationIdFromUrl = sp.installation_id || "";
-  const defaultInstallation = await getUserDefaultGitHubAppInstallationId();
+  const orgDefault = await getOrgDefaultGitHubAppInstallationId(activeOrg.id);
 
   const installationId =
-    installationIdFromUrl || defaultInstallation.installationId || "";
+    installationIdFromUrl || orgDefault.installationId || "";
 
   const reposResult = installationId
     ? await getInstallationRepositories({ installationId })
