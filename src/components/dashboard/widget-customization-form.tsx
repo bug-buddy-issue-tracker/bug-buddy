@@ -56,6 +56,8 @@ interface WidgetCustomizationFormProps {
     buttonPosition: string;
   } | null;
   onDirtyChange?: (isDirty: boolean) => void;
+  /** When true, members can view and copy embed code but cannot edit settings. */
+  readOnly?: boolean;
 }
 
 export function WidgetCustomizationForm({
@@ -63,6 +65,7 @@ export function WidgetCustomizationForm({
   apiKey,
   initialData,
   onDirtyChange,
+  readOnly = false,
 }: WidgetCustomizationFormProps) {
   const [saving, setSaving] = React.useState(false);
   const [uploadingFont, setUploadingFont] = React.useState(false);
@@ -393,256 +396,272 @@ export function WidgetCustomizationForm({
             </div>
           </div>
 
+          {readOnly && (
+            <p className="mb-4 text-sm text-muted-foreground">
+              View only. Only admins and owners can edit widget settings.
+            </p>
+          )}
+
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <FieldGroup>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Controller
-                  name="primaryColor"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="primaryColor">
-                        Primary Color
-                      </FieldLabel>
-                      <div className="flex gap-2">
-                        <Input
-                          {...field}
-                          id="primaryColor"
-                          type="color"
-                          className="w-20 h-10"
-                          aria-invalid={fieldState.invalid}
-                        />
-                        <Input
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="#000000"
-                          aria-invalid={fieldState.invalid}
-                        />
-                      </div>
-                      {fieldState.invalid && (
-                        <FieldError
-                          errors={
-                            fieldState.error
-                              ? [{ message: fieldState.error.message }]
-                              : undefined
-                          }
-                        />
-                      )}
-                    </Field>
-                  )}
-                />
-
-                <Controller
-                  name="secondaryColor"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="secondaryColor">
-                        Secondary Color
-                      </FieldLabel>
-                      <div className="flex gap-2">
-                        <Input
-                          {...field}
-                          id="secondaryColor"
-                          type="color"
-                          className="w-20 h-10"
-                          aria-invalid={fieldState.invalid}
-                        />
-                        <Input
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="#ffffff"
-                          aria-invalid={fieldState.invalid}
-                        />
-                      </div>
-                      {fieldState.invalid && (
-                        <FieldError
-                          errors={
-                            fieldState.error
-                              ? [{ message: fieldState.error.message }]
-                              : undefined
-                          }
-                        />
-                      )}
-                    </Field>
-                  )}
-                />
-              </div>
-
-              <Controller
-                name="fontFamily"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="fontFamily">Font Family</FieldLabel>
-                    <Input
-                      {...field}
-                      id="fontFamily"
-                      placeholder="system-ui, Arial, sans-serif"
-                      disabled={!!customFontUrl}
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {customFontUrl && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Font family is set to &quot;{CUSTOM_WIDGET_FONT_FAMILY}
-                        &quot; for your custom font
-                      </p>
-                    )}
-                    {fieldState.invalid && (
-                      <FieldError
-                        errors={
-                          fieldState.error
-                            ? [{ message: fieldState.error.message }]
-                            : undefined
-                        }
-                      />
-                    )}
-                  </Field>
-                )}
-              />
-
-              <Field>
-                <FieldLabel htmlFor="fontUpload">
-                  Custom Font (Optional)
-                </FieldLabel>
-                <div className="space-y-2">
-                  {customFontUrl ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            Custom Font Loaded
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate mt-1">
-                            {customFontFileName || "Custom font"}
-                          </p>
+            <fieldset disabled={readOnly} className="space-y-0">
+              <FieldGroup>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Controller
+                    name="primaryColor"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="primaryColor">
+                          Primary Color
+                        </FieldLabel>
+                        <div className="flex gap-2">
+                          <Input
+                            {...field}
+                            id="primaryColor"
+                            type="color"
+                            className="w-20 h-10"
+                            aria-invalid={fieldState.invalid}
+                          />
+                          <Input
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="#000000"
+                            aria-invalid={fieldState.invalid}
+                          />
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRemoveFont}
-                          disabled={uploadingFont || removingFont}
-                          loading={removingFont}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Font family has been set to &quot;
-                        {CUSTOM_WIDGET_FONT_FAMILY}&quot; automatically
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <Input
-                        ref={fontInputRef}
-                        id="fontUpload"
-                        type="file"
-                        accept=".woff,.woff2,.ttf,.otf"
-                        onChange={handleFontUpload}
-                        disabled={uploadingFont}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Supported formats: WOFF, WOFF2, TTF, OTF (max 2MB)
-                      </p>
-                    </>
-                  )}
+                        {fieldState.invalid && (
+                          <FieldError
+                            errors={
+                              fieldState.error
+                                ? [{ message: fieldState.error.message }]
+                                : undefined
+                            }
+                          />
+                        )}
+                      </Field>
+                    )}
+                  />
+
+                  <Controller
+                    name="secondaryColor"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="secondaryColor">
+                          Secondary Color
+                        </FieldLabel>
+                        <div className="flex gap-2">
+                          <Input
+                            {...field}
+                            id="secondaryColor"
+                            type="color"
+                            className="w-20 h-10"
+                            aria-invalid={fieldState.invalid}
+                          />
+                          <Input
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="#ffffff"
+                            aria-invalid={fieldState.invalid}
+                          />
+                        </div>
+                        {fieldState.invalid && (
+                          <FieldError
+                            errors={
+                              fieldState.error
+                                ? [{ message: fieldState.error.message }]
+                                : undefined
+                            }
+                          />
+                        )}
+                      </Field>
+                    )}
+                  />
                 </div>
-              </Field>
 
-              <Controller
-                name="borderRadius"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="borderRadius">
-                      Border Radius
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="borderRadius"
-                      placeholder="8px"
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError
-                        errors={
-                          fieldState.error
-                            ? [{ message: fieldState.error.message }]
-                            : undefined
-                        }
+                <Controller
+                  name="fontFamily"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="fontFamily">Font Family</FieldLabel>
+                      <Input
+                        {...field}
+                        id="fontFamily"
+                        placeholder="system-ui, Arial, sans-serif"
+                        disabled={!!customFontUrl}
+                        aria-invalid={fieldState.invalid}
                       />
-                    )}
-                  </Field>
-                )}
-              />
+                      {customFontUrl && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Font family is set to &quot;
+                          {CUSTOM_WIDGET_FONT_FAMILY}
+                          &quot; for your custom font
+                        </p>
+                      )}
+                      {fieldState.invalid && (
+                        <FieldError
+                          errors={
+                            fieldState.error
+                              ? [{ message: fieldState.error.message }]
+                              : undefined
+                          }
+                        />
+                      )}
+                    </Field>
+                  )}
+                />
 
-              <Controller
-                name="buttonText"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="buttonText">Button Text</FieldLabel>
-                    <Input
-                      {...field}
-                      id="buttonText"
-                      placeholder="Feedback"
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError
-                        errors={
-                          fieldState.error
-                            ? [{ message: fieldState.error.message }]
-                            : undefined
-                        }
+                <Field>
+                  <FieldLabel htmlFor="fontUpload">
+                    Custom Font (Optional)
+                  </FieldLabel>
+                  <div className="space-y-2">
+                    {customFontUrl ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              Custom Font Loaded
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate mt-1">
+                              {customFontFileName || "Custom font"}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRemoveFont}
+                            disabled={uploadingFont || removingFont}
+                            loading={removingFont}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Font family has been set to &quot;
+                          {CUSTOM_WIDGET_FONT_FAMILY}&quot; automatically
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <Input
+                          ref={fontInputRef}
+                          id="fontUpload"
+                          type="file"
+                          accept=".woff,.woff2,.ttf,.otf"
+                          onChange={handleFontUpload}
+                          disabled={uploadingFont}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Supported formats: WOFF, WOFF2, TTF, OTF (max 2MB)
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </Field>
+
+                <Controller
+                  name="borderRadius"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="borderRadius">
+                        Border Radius
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="borderRadius"
+                        placeholder="8px"
+                        aria-invalid={fieldState.invalid}
                       />
-                    )}
-                  </Field>
-                )}
-              />
+                      {fieldState.invalid && (
+                        <FieldError
+                          errors={
+                            fieldState.error
+                              ? [{ message: fieldState.error.message }]
+                              : undefined
+                          }
+                        />
+                      )}
+                    </Field>
+                  )}
+                />
 
-              <Controller
-                name="buttonPosition"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="buttonPosition">
-                      Button Position
-                    </FieldLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="buttonPosition">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bottom-right">
-                          Bottom Right
-                        </SelectItem>
-                        <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                        <SelectItem value="top-right">Top Right</SelectItem>
-                        <SelectItem value="top-left">Top Left</SelectItem>
-                        <SelectItem value="left">Left (Vertical)</SelectItem>
-                        <SelectItem value="right">Right (Vertical)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid && (
-                      <FieldError
-                        errors={
-                          fieldState.error
-                            ? [{ message: fieldState.error?.message }]
-                            : undefined
-                        }
+                <Controller
+                  name="buttonText"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="buttonText">Button Text</FieldLabel>
+                      <Input
+                        {...field}
+                        id="buttonText"
+                        placeholder="Feedback"
+                        aria-invalid={fieldState.invalid}
                       />
-                    )}
-                  </Field>
-                )}
-              />
+                      {fieldState.invalid && (
+                        <FieldError
+                          errors={
+                            fieldState.error
+                              ? [{ message: fieldState.error.message }]
+                              : undefined
+                          }
+                        />
+                      )}
+                    </Field>
+                  )}
+                />
 
-              <Button type="submit" loading={saving}>
-                Save Widget Customization
-              </Button>
-            </FieldGroup>
+                <Controller
+                  name="buttonPosition"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="buttonPosition">
+                        Button Position
+                      </FieldLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger id="buttonPosition">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bottom-right">
+                            Bottom Right
+                          </SelectItem>
+                          <SelectItem value="bottom-left">
+                            Bottom Left
+                          </SelectItem>
+                          <SelectItem value="top-right">Top Right</SelectItem>
+                          <SelectItem value="top-left">Top Left</SelectItem>
+                          <SelectItem value="left">Left (Vertical)</SelectItem>
+                          <SelectItem value="right">
+                            Right (Vertical)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && (
+                        <FieldError
+                          errors={
+                            fieldState.error
+                              ? [{ message: fieldState.error?.message }]
+                              : undefined
+                          }
+                        />
+                      )}
+                    </Field>
+                  )}
+                />
+
+                <Button type="submit" loading={saving}>
+                  Save Widget Customization
+                </Button>
+              </FieldGroup>
+            </fieldset>
           </form>
         </CardContent>
       </Card>

@@ -209,9 +209,7 @@ export function ProjectScopedSettingsForm({
             {isOwner && (
               <TabsTrigger value="github">GitHub Integration</TabsTrigger>
             )}
-            {isAdmin && (
-              <TabsTrigger value="widget">Widget Customization</TabsTrigger>
-            )}
+            <TabsTrigger value="widget">Widget Customization</TabsTrigger>
           </TabsList>
         </div>
 
@@ -237,16 +235,15 @@ export function ProjectScopedSettingsForm({
           </TabsContent>
         )}
 
-        {isAdmin && (
-          <TabsContent value="widget">
-            <WidgetCustomizationForm
-              projectId={project.id}
-              apiKey={project.apiKey}
-              initialData={project.widgetCustomization || null}
-              onDirtyChange={setWidgetFormDirty}
-            />
-          </TabsContent>
-        )}
+        <TabsContent value="widget">
+          <WidgetCustomizationForm
+            projectId={project.id}
+            apiKey={project.apiKey}
+            initialData={project.widgetCustomization || null}
+            onDirtyChange={setWidgetFormDirty}
+            readOnly={!isAdmin}
+          />
+        </TabsContent>
       </Tabs>
 
       <Dialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
