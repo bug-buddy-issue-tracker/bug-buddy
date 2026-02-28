@@ -1,41 +1,43 @@
+import { UserHomeContent } from "@/components/dashboard/user-home-content";
 import { getSession } from "@/lib/auth/helpers";
 import { prisma } from "@/lib/prisma";
-import { getOrgProjectsForSwitcher } from "@/server/services/projects.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Dashboard | Bug Buddy",
-  description: "Overview of your bug reports, feedback, and project statistics",
+  description: "Your organizations and projects",
 };
 
 export default async function DashboardPage() {
   const session = await getSession();
 
   if (!session?.user) {
-    redirect("/");
+    redirect("/signin");
   }
 
-  const firstMembership = await prisma.member.findFirst({
+  const memberships = await prisma.member.findMany({
     where: { userId: session.user.id },
-    include: { organization: true },
+    include: {
+      organization: {
+        include: {
+          _count: { select: { projects: true } },
+        },
+      },
+    },
     orderBy: { createdAt: "asc" },
   });
 
-  if (!firstMembership) {
+  if (memberships.length === 0) {
     redirect("/dashboard/new");
   }
 
-  const projects = await getOrgProjectsForSwitcher(
-    firstMembership.organizationId,
-  );
-  const firstProject = projects[0];
+  const orgs = memberships.map((m) => ({
+    id: m.organization.id,
+    name: m.organization.name,
+    slug: m.organization.slug,
+    projectCount: m.organization._count.projects,
+  }));
 
-  if (!firstProject) {
-    redirect("/dashboard/new");
-  }
-
-  redirect(
-    `/dashboard/${firstMembership.organization.slug}/${firstProject.slug}`,
-  );
+  return <UserHomeContent orgs={orgs} />;
 }

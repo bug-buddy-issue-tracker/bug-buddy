@@ -5,7 +5,6 @@ import { getSession } from "@/lib/auth/helpers";
 import { prisma } from "@/lib/prisma";
 import { getInstallationRepositories } from "@/server/actions/github/app/installation-repositories";
 import { getUserDefaultGitHubAppInstallationId } from "@/server/actions/github/app/user-installation";
-import { getOrgProjectsForSwitcher } from "@/server/services/projects.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -23,7 +22,7 @@ export default async function NewProjectPage({
   const sp = await searchParams;
 
   if (!session?.user) {
-    redirect("/");
+    redirect("/signin");
   }
 
   const memberships = await prisma.member.findMany({
@@ -68,14 +67,7 @@ export default async function NewProjectPage({
     ? await getInstallationRepositories({ installationId })
     : null;
 
-  let cancelHref: string | null = null;
-  for (const org of orgs) {
-    const projects = await getOrgProjectsForSwitcher(org.id);
-    if (projects.length > 0) {
-      cancelHref = `/dashboard/${org.slug}/${projects[0]!.slug}`;
-      break;
-    }
-  }
+  const cancelHref = activeOrg ? `/dashboard/${activeOrg.slug}` : "/dashboard";
 
   return (
     <OrgProvider orgs={orgs} activeOrg={activeOrg}>

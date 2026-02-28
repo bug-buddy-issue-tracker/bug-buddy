@@ -22,7 +22,7 @@ export default async function ProjectAnalyticsPage({
   const { orgSlug, projectSlug } = await params;
 
   if (!session?.user) {
-    redirect("/");
+    redirect("/signin");
   }
 
   const org = await prisma.organization.findUnique({

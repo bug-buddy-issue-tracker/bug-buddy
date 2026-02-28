@@ -26,7 +26,7 @@ export default async function DashboardLayout({
 }) {
   const session = await getSession();
   if (!session?.user) {
-    redirect("/");
+    redirect("/signin");
   }
 
   const memberships = await prisma.member.findMany({
@@ -49,19 +49,6 @@ export default async function DashboardLayout({
 
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "";
-  const isBareDashboard =
-    pathname === "/dashboard" || pathname === "/dashboard/";
-
-  if (isBareDashboard) {
-    const firstOrg = orgs[0]!;
-    const projects = await getOrgProjectsForSwitcher(firstOrg.id);
-    const firstProject = projects[0];
-    if (!firstProject) {
-      redirect(`/dashboard/${firstOrg.slug}`);
-    }
-    redirect(`/dashboard/${firstOrg.slug}/${firstProject.slug}`);
-  }
-
   const url = headersList.get("x-url") || headersList.get("referer") || "";
   const orgSlugMatch =
     url.match(/\/dashboard\/([^/]+)/) ??

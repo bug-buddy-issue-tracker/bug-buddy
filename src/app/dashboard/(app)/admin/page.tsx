@@ -13,7 +13,7 @@ export default async function AdminPage() {
   const session = await getSession();
 
   if (!session?.user) {
-    redirect("/");
+    redirect("/signin");
   }
 
   // Check if user has admin role

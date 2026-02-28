@@ -31,7 +31,7 @@ export default async function ProjectFeedbackPage({
   const sp = await searchParams;
 
   if (!session?.user) {
-    redirect("/");
+    redirect("/signin");
   }
 
   const org = await prisma.organization.findUnique({

@@ -17,7 +17,7 @@ export default async function AcceptInvitationPage({
   const { invitationId } = await params;
 
   if (!session?.user) {
-    redirect(`/?redirect=/accept-invitation/${invitationId}`);
+    redirect(`/signin?redirect=/accept-invitation/${invitationId}`);
   }
 
   return <AcceptInvitationClient invitationId={invitationId} />;

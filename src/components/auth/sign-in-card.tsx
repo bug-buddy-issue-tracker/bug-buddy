@@ -43,7 +43,7 @@ function GoogleIcon() {
   );
 }
 
-export function SignInCard() {
+export function SignInCard({ callbackURL }: { callbackURL?: string } = {}) {
   const [loadingProvider, setLoadingProvider] = useState<
     "github" | "google" | null
   >(null);
@@ -92,7 +92,10 @@ export function SignInCard() {
             onClick={() => {
               setLoadingProvider("github");
               posthog.capture("user_signed_in", { provider: "github" });
-              authClient.signIn.social({ provider: "github" });
+              authClient.signIn.social({
+                provider: "github",
+                ...(callbackURL && { callbackURL }),
+              });
             }}
             disabled={isLoading}
           >
@@ -123,7 +126,10 @@ export function SignInCard() {
             onClick={() => {
               setLoadingProvider("google");
               posthog.capture("user_signed_in", { provider: "google" });
-              authClient.signIn.social({ provider: "google" });
+              authClient.signIn.social({
+                provider: "google",
+                ...(callbackURL && { callbackURL }),
+              });
             }}
             disabled={isLoading}
           >

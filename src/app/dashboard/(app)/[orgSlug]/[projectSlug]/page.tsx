@@ -24,7 +24,7 @@ export default async function ProjectDashboardPage({
   const { orgSlug, projectSlug } = await params;
 
   if (!session?.user) {
-    redirect("/");
+    redirect("/signin");
   }
 
   const org = await prisma.organization.findUnique({

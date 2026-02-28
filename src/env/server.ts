@@ -3,6 +3,7 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
+    APP_URL: z.url().optional(),
     DATABASE_URL: z.url(),
     KV_REST_API_URL: z.url(),
     KV_REST_API_TOKEN: z.string().min(1),

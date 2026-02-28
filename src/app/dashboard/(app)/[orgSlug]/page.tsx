@@ -1,7 +1,14 @@
+import { OrgHomeContent } from "@/components/dashboard/org-home-content";
 import { requireOrgMember } from "@/lib/auth/org-access";
 import { prisma } from "@/lib/prisma";
-import { getOrgProjectsForSwitcher } from "@/server/services/projects.service";
+import { getOrgProjects } from "@/server/services/projects.service";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Projects | Bug Buddy",
+  description: "Projects in this organization",
+};
 
 export default async function OrgDashboardPage({
   params,
@@ -12,7 +19,7 @@ export default async function OrgDashboardPage({
 
   const org = await prisma.organization.findUnique({
     where: { slug: orgSlug },
-    select: { id: true, slug: true },
+    select: { id: true, name: true, slug: true },
   });
 
   if (!org) {
@@ -21,11 +28,21 @@ export default async function OrgDashboardPage({
 
   await requireOrgMember(org.id);
 
-  const projects = await getOrgProjectsForSwitcher(org.id);
+  const projects = await getOrgProjects(org.id);
 
-  if (projects.length === 0) {
-    redirect(`/dashboard/new?org=${encodeURIComponent(orgSlug)}`);
-  }
+  const projectsForHome = projects.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    description: p.description,
+    _count: { feedback: p._count.feedback },
+  }));
 
-  redirect(`/dashboard/${orgSlug}/${projects[0]!.slug}`);
+  return (
+    <OrgHomeContent
+      orgSlug={org.slug}
+      orgName={org.name}
+      projects={projectsForHome}
+    />
+  );
 }
