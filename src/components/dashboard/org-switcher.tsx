@@ -58,7 +58,10 @@ export function OrgSwitcher({ className }: { className?: string }) {
       toast.success("Organization created!");
       setDialogOpen(false);
       setName("");
-      router.push("/dashboard/new");
+      const orgParam = data?.slug
+        ? `?org=${encodeURIComponent(data.slug)}`
+        : "";
+      router.push(`/dashboard/new${orgParam}`);
       router.refresh();
     } catch (error) {
       toast.error(

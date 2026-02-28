@@ -152,18 +152,6 @@ export function SignInCard() {
           </p>
         </CardContent>
       </Card>
-
-      <div className="text-center">
-        <p className="text-sm text-muted-foreground">
-          Need help?{" "}
-          <a
-            href="mailto:support@bugbuddy.com"
-            className="font-medium text-primary hover:underline"
-          >
-            Contact support
-          </a>
-        </p>
-      </div>
     </div>
   );
 }

@@ -40,6 +40,7 @@ export function CreateProjectPageClient({
   installRedirectUrl = "/dashboard/new",
   onProjectCreatedAction,
   onCancelAction,
+  cancelHref,
 }: {
   initialInstallationId: string;
   repositories: Array<{
@@ -58,6 +59,8 @@ export function CreateProjectPageClient({
     slug: string;
   }) => void;
   onCancelAction?: () => void;
+  /** When set, Cancel navigates here instead of /dashboard to avoid redirect loops from the new-project page. */
+  cancelHref?: string | null;
 }) {
   const router = useRouter();
   const { activeOrg } = useOrg();
@@ -469,9 +472,14 @@ export function CreateProjectPageClient({
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
-              onCancelAction ? onCancelAction() : router.push("/dashboard")
-            }
+            onClick={() => {
+              if (onCancelAction) {
+                onCancelAction();
+              } else if (cancelHref) {
+                router.push(cancelHref);
+              }
+              // When cancelHref is null (no org has projects), do nothing to avoid redirect loop
+            }}
           >
             Cancel
           </Button>

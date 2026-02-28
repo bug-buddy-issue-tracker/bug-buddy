@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/helpers";
 import { prisma } from "@/lib/prisma";
 import { getInstallationRepositories } from "@/server/actions/github/app/installation-repositories";
 import { getUserDefaultGitHubAppInstallationId } from "@/server/actions/github/app/user-installation";
+import { getOrgProjectsForSwitcher } from "@/server/services/projects.service";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 export default async function NewProjectPage({
   searchParams,
 }: {
-  searchParams: Promise<{ installation_id?: string }>;
+  searchParams: Promise<{ installation_id?: string; org?: string }>;
 }) {
   const session = await getSession();
   const sp = await searchParams;
@@ -53,7 +54,9 @@ export default async function NewProjectPage({
     role: m.role,
   }));
 
-  const activeOrg = orgs[0]!;
+  const orgSlugFromUrl = sp.org?.trim();
+  const activeOrg =
+    (orgSlugFromUrl && orgs.find((o) => o.slug === orgSlugFromUrl)) || orgs[0]!;
 
   const installationIdFromUrl = sp.installation_id || "";
   const defaultInstallation = await getUserDefaultGitHubAppInstallationId();
@@ -64,6 +67,15 @@ export default async function NewProjectPage({
   const reposResult = installationId
     ? await getInstallationRepositories({ installationId })
     : null;
+
+  let cancelHref: string | null = null;
+  for (const org of orgs) {
+    const projects = await getOrgProjectsForSwitcher(org.id);
+    if (projects.length > 0) {
+      cancelHref = `/dashboard/${org.slug}/${projects[0]!.slug}`;
+      break;
+    }
+  }
 
   return (
     <OrgProvider orgs={orgs} activeOrg={activeOrg}>
@@ -82,6 +94,7 @@ export default async function NewProjectPage({
           repoError={
             reposResult && !reposResult.success ? reposResult.error : null
           }
+          cancelHref={cancelHref}
         />
       </div>
     </OrgProvider>
