@@ -29,6 +29,7 @@
     "db:studio": "prisma studio --config=src/server/prisma/prisma.config.ts"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@octokit/auth-app": "^7.1.5",
     "@octokit/rest": "^21.0.2",
@@ -59,12 +60,15 @@
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "fabric": "^5.5.2",
+    "gsap": "^3.15.0",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.562.0",
+    "motion": "^12.38.0",
     "next": "16.1.6",
     "next-themes": "^0.4.6",
     "nodemailer": "^7.0.12",
     "nuqs": "^2.8.6",
+    "ogl": "^1.0.11",
     "pg": "^8.16.3",
     "posthog-js": "^1.310.1",
     "posthog-node": "^4.0.1",

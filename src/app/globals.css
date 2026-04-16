@@ -242,3 +242,119 @@
 .fade-in-scale {
   animation: fadeInScale 0.3s ease-out;
 }
+
+/* Landing page utilities */
+
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    oklch(0.7 0.2 300) 50%,
+    var(--primary) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 6s ease-in-out infinite;
+}
+
+@keyframes blob {
+  0%,
+  100% {
+    translate: 0 0;
+    scale: 1;
+    opacity: 1;
+  }
+  25% {
+    translate: 30px -20px;
+    scale: 1.05;
+    opacity: 0.8;
+  }
+  50% {
+    translate: -20px 15px;
+    scale: 0.95;
+    opacity: 1;
+  }
+  75% {
+    translate: 15px 25px;
+    scale: 1.08;
+    opacity: 0.85;
+  }
+}
+
+.animate-blob {
+  animation: blob 12s ease-in-out infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-6000 {
+  animation-delay: 6s;
+}
+
+.glow-border {
+  position: relative;
+}
+
+.glow-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    var(--primary) 50%,
+    transparent 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glow-border:hover::before {
+  opacity: 1;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}

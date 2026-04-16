@@ -24,7 +24,7 @@ export default async function SignInPage({
   const callbackURL =
     redirectTo && redirectTo.startsWith("/")
       ? redirectTo
-      : undefined;
+      : "/dashboard";
 
   return (
     <div
